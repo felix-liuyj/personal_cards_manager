@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_cards_manager/core/database/database_service.dart';
-import 'package:personal_cards_manager/models/identity_document.dart';
+import 'package:isar/isar.dart';
+import 'package:personal_cards_manager/data/local_db_service.dart';
+import 'package:personal_cards_manager/data/models/models.dart';
+import 'package:personal_cards_manager/screens/documents/id_card_form_screen.dart';
 
 class DocumentsListScreen extends ConsumerStatefulWidget {
   const DocumentsListScreen({super.key});
@@ -12,47 +14,54 @@ class DocumentsListScreen extends ConsumerStatefulWidget {
 }
 
 class _DocumentsListScreenState extends ConsumerState<DocumentsListScreen> {
-  List<IdentityDocument> _documents = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDocuments();
-  }
-
-  Future<void> _loadDocuments() async {
-    setState(() => _isLoading = true);
-    final docs = await DatabaseService.instance.getAllDocuments();
-    setState(() {
-      _documents = docs;
-      _isLoading = false;
-    });
+  Future<List<IDCard>> _loadDocuments(Isar isar) async {
+    return await isar.iDCards.where().findAll();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isarAsync = ref.watch(localDbProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('证件'),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: _addDocument),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _addDocument(),
+          ),
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _documents.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _loadDocuments,
+      body: isarAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('错误: $err')),
+        data: (isar) => FutureBuilder<List<IDCard>>(
+          future: _loadDocuments(isar),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final documents = snapshot.data ?? [];
+            if (documents.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                setState(() {});
+              },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: _documents.length,
+                itemCount: documents.length,
                 itemBuilder: (context, index) {
-                  return _buildDocumentItem(_documents[index]);
+                  return _buildDocumentItem(documents[index]);
                 },
               ),
-            ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -76,131 +85,220 @@ class _DocumentsListScreenState extends ConsumerState<DocumentsListScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _addDocument,
+            icon: const Icon(Icons.add),
+            label: const Text('添加证件'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildDocumentItem(IdentityDocument doc) {
+  Widget _buildDocumentItem(IDCard doc) {
+    final maskedNumber =
+        doc.documentNumber != null && doc.documentNumber!.length >= 4
+        ? '**** **** **** ${doc.documentNumber!.substring(doc.documentNumber!.length - 4)}'
+        : '****';
+
+    final isExpired =
+        doc.expireDate != null && doc.expireDate!.isBefore(DateTime.now());
+    final isExpiring =
+        doc.expireDate != null &&
+        doc.expireDate!.isAfter(DateTime.now()) &&
+        doc.expireDate!.difference(DateTime.now()).inDays <= 30;
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getDocumentColor(doc.documentType),
-          child: Icon(
-            _getDocumentIcon(doc.documentType),
-            color: Colors.white,
-            size: 20,
+      child: InkWell(
+        onTap: () => _viewDocument(doc),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: _getDocumentColor(doc.documentType),
+                    child: Icon(
+                      _getDocumentIcon(doc.documentType),
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          doc.cardName?.isNotEmpty == true
+                              ? doc.cardName!
+                              : _getDocumentTypeName(doc.documentType),
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        Text(
+                          _getDocumentTypeName(doc.documentType),
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isExpired)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '已过期',
+                        style: TextStyle(fontSize: 12, color: Colors.red),
+                      ),
+                    ),
+                  if (isExpiring)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: const Text(
+                        '即将过期',
+                        style: TextStyle(fontSize: 12, color: Colors.orange),
+                      ),
+                    ),
+                  if (doc.isFavorite)
+                    const Icon(Icons.star, color: Colors.amber, size: 20),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    doc.fullName ?? '未设置姓名',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const Spacer(),
+                  Text(
+                    maskedNumber,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        title: Text(doc.documentName.isNotEmpty ? doc.documentName : doc.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(_getDocumentTypeName(doc.documentType)),
-            if (doc.documentNumber.isNotEmpty) Text('号码: ${doc.maskedNumber}'),
-          ],
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (doc.isExpired)
-              const Icon(Icons.warning, color: Colors.red, size: 20),
-            if (doc.isFavorite)
-              const Icon(Icons.star, color: Colors.amber, size: 20),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-        onTap: () => _viewDocument(doc),
       ),
     );
   }
 
-  Color _getDocumentColor(DocumentType type) {
+  Color _getDocumentColor(String? type) {
     switch (type) {
-      case DocumentType.idCard:
+      case 'ID':
         return Colors.blue;
-      case DocumentType.passport:
+      case 'PASSPORT':
         return Colors.red;
-      case DocumentType.driverLicense:
+      case 'DRIVER_LICENSE':
         return Colors.green;
-      case DocumentType.hkMacauPass:
+      case 'HK_MACAU_PASS':
         return Colors.purple;
-      case DocumentType.taiwanPass:
+      case 'TAIWAN_PASS':
         return Colors.teal;
-      case DocumentType.residencePermit:
+      case 'RESIDENCE_PERMIT':
         return Colors.indigo;
-      case DocumentType.socialSecurityCard:
+      case 'SOCIAL_SECURITY':
         return Colors.cyan;
-      case DocumentType.studentId:
+      case 'STUDENT_ID':
         return Colors.amber;
-      case DocumentType.workPermit:
+      case 'WORK_PERMIT':
         return Colors.brown;
       default:
         return Colors.grey;
     }
   }
 
-  IconData _getDocumentIcon(DocumentType type) {
+  IconData _getDocumentIcon(String? type) {
     switch (type) {
-      case DocumentType.idCard:
+      case 'ID':
         return Icons.badge;
-      case DocumentType.passport:
+      case 'PASSPORT':
         return Icons.flight;
-      case DocumentType.driverLicense:
+      case 'DRIVER_LICENSE':
         return Icons.directions_car;
-      case DocumentType.hkMacauPass:
-      case DocumentType.taiwanPass:
+      case 'HK_MACAU_PASS':
+      case 'TAIWAN_PASS':
         return Icons.card_travel;
-      case DocumentType.residencePermit:
+      case 'RESIDENCE_PERMIT':
         return Icons.home;
-      case DocumentType.socialSecurityCard:
+      case 'SOCIAL_SECURITY':
         return Icons.health_and_safety;
-      case DocumentType.studentId:
+      case 'STUDENT_ID':
         return Icons.school;
-      case DocumentType.workPermit:
+      case 'WORK_PERMIT':
         return Icons.work;
       default:
         return Icons.description;
     }
   }
 
-  String _getDocumentTypeName(DocumentType type) {
+  String _getDocumentTypeName(String? type) {
     switch (type) {
-      case DocumentType.idCard:
-        return '身份证';
-      case DocumentType.passport:
+      case 'ID':
+        return '居民身份证';
+      case 'PASSPORT':
         return '护照';
-      case DocumentType.driverLicense:
+      case 'DRIVER_LICENSE':
         return '驾驶证';
-      case DocumentType.hkMacauPass:
+      case 'HK_MACAU_PASS':
         return '港澳通行证';
-      case DocumentType.taiwanPass:
+      case 'TAIWAN_PASS':
         return '台湾通行证';
-      case DocumentType.residencePermit:
+      case 'RESIDENCE_PERMIT':
         return '居住证';
-      case DocumentType.socialSecurityCard:
+      case 'SOCIAL_SECURITY':
         return '社保卡';
-      case DocumentType.studentId:
+      case 'STUDENT_ID':
         return '学生证';
-      case DocumentType.workPermit:
+      case 'WORK_PERMIT':
         return '工作证';
       default:
         return '其他证件';
     }
   }
 
-  void _addDocument() {
-    // TODO: Navigate to add document screen
-    ScaffoldMessenger.of(
+  void _addDocument() async {
+    final result = await Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('添加证件功能开发中')));
+      MaterialPageRoute(builder: (context) => const IDCardFormScreen()),
+    );
+    if (result == true) {
+      setState(() {});
+    }
   }
 
-  void _viewDocument(IdentityDocument doc) {
-    // TODO: Navigate to document detail screen
-    ScaffoldMessenger.of(
+  void _viewDocument(IDCard doc) async {
+    final result = await Navigator.push(
       context,
-    ).showSnackBar(SnackBar(content: Text('查看证件: ${doc.documentName}')));
+      MaterialPageRoute(builder: (context) => IDCardFormScreen(card: doc)),
+    );
+    if (result == true) {
+      setState(() {});
+    }
   }
 }

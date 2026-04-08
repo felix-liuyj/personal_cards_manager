@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-import 'package:personal_cards_manager/core/database/database_service.dart';
-import 'package:personal_cards_manager/models/bank_card.dart';
+import 'package:isar/isar.dart';
+import 'package:personal_cards_manager/data/local_db_service.dart';
+import 'package:personal_cards_manager/data/models/models.dart';
+import 'package:personal_cards_manager/screens/bank_cards/bank_card_form_screen.dart';
+import 'package:personal_cards_manager/widgets/secure_text.dart';
 
 class BankCardsListScreen extends ConsumerStatefulWidget {
   const BankCardsListScreen({super.key});
@@ -13,45 +15,51 @@ class BankCardsListScreen extends ConsumerStatefulWidget {
 }
 
 class _BankCardsListScreenState extends ConsumerState<BankCardsListScreen> {
-  List<BankCard> _cards = [];
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCards();
-  }
-
-  Future<void> _loadCards() async {
-    setState(() => _isLoading = true);
-    final cards = await DatabaseService.instance.getAllBankCards();
-    setState(() {
-      _cards = cards;
-      _isLoading = false;
-    });
+  Future<List<BankCard>> _loadCards(Isar isar) async {
+    return await isar.bankCards.where().findAll();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isarAsync = ref.watch(localDbProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('银行卡'),
-        actions: [IconButton(icon: const Icon(Icons.add), onPressed: _addCard)],
+        actions: [
+          IconButton(icon: const Icon(Icons.add), onPressed: () => _addCard()),
+        ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _cards.isEmpty
-          ? _buildEmptyState()
-          : RefreshIndicator(
-              onRefresh: _loadCards,
+      body: isarAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, stack) => Center(child: Text('错误: $err')),
+        data: (isar) => FutureBuilder<List<BankCard>>(
+          future: _loadCards(isar),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final cards = snapshot.data ?? [];
+            if (cards.isEmpty) {
+              return _buildEmptyState();
+            }
+
+            return RefreshIndicator(
+              onRefresh: () async {
+                setState(() {});
+              },
               child: ListView.builder(
                 padding: const EdgeInsets.all(16),
-                itemCount: _cards.length,
+                itemCount: cards.length,
                 itemBuilder: (context, index) {
-                  return _buildCardItem(_cards[index]);
+                  return _buildCardItem(cards[index]);
                 },
               ),
-            ),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -75,41 +83,96 @@ class _BankCardsListScreenState extends ConsumerState<BankCardsListScreen> {
               context,
             ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
           ),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _addCard,
+            icon: const Icon(Icons.add),
+            label: const Text('添加银行卡'),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildCardItem(BankCard card) {
+    final maskedNumber = card.fullNumber != null && card.fullNumber!.length >= 4
+        ? '**** **** **** ${card.fullNumber!.substring(card.fullNumber!.length - 4)}'
+        : '****';
+
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getCardColor(card.cardOrganization),
-          child: Text(
-            card.issuerName.isNotEmpty ? card.issuerName[0] : '?',
-            style: const TextStyle(color: Colors.white),
+      child: InkWell(
+        onTap: () => _viewCard(card),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: _getCardColor(card.network),
+                    child: Text(
+                      (card.issuerName?.isNotEmpty == true)
+                          ? card.issuerName![0]
+                          : '?',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          card.cardName?.isNotEmpty == true
+                              ? card.cardName!
+                              : card.issuerName ?? '未命名',
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        if (card.aliasName?.isNotEmpty == true)
+                          Text(
+                            card.aliasName!,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodySmall?.copyWith(color: Colors.grey),
+                          ),
+                      ],
+                    ),
+                  ),
+                  if (card.isFavorite)
+                    const Icon(Icons.star, color: Colors.amber, size: 20),
+                  const Icon(Icons.chevron_right),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Text(
+                    maskedNumber,
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const Spacer(),
+                  if (card.expMonth != null && card.expYear != null)
+                    Text(
+                      '${card.expMonth.toString().padLeft(2, '0')}/${card.expYear.toString().substring(2)}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                ],
+              ),
+            ],
           ),
         ),
-        title: Text(card.cardName.isNotEmpty ? card.cardName : card.issuerName),
-        subtitle: Text(card.maskedNumber),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (card.isFavorite)
-              const Icon(Icons.star, color: Colors.amber, size: 20),
-            if (card.isArchived)
-              const Icon(Icons.archive, color: Colors.grey, size: 20),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-        onTap: () => _viewCard(card),
       ),
     );
   }
 
-  Color _getCardColor(String organization) {
-    switch (organization.toLowerCase()) {
+  Color _getCardColor(String? network) {
+    switch (network?.toLowerCase()) {
       case 'visa':
         return Colors.blue;
       case 'mastercard':
@@ -123,17 +186,23 @@ class _BankCardsListScreenState extends ConsumerState<BankCardsListScreen> {
     }
   }
 
-  void _addCard() {
-    // TODO: Navigate to add card screen
-    ScaffoldMessenger.of(
+  void _addCard() async {
+    final result = await Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('添加银行卡功能开发中')));
+      MaterialPageRoute(builder: (context) => const BankCardFormScreen()),
+    );
+    if (result == true) {
+      setState(() {});
+    }
   }
 
-  void _viewCard(BankCard card) {
-    // TODO: Navigate to card detail screen
-    ScaffoldMessenger.of(
+  void _viewCard(BankCard card) async {
+    final result = await Navigator.push(
       context,
-    ).showSnackBar(SnackBar(content: Text('查看卡片: ${card.cardName}')));
+      MaterialPageRoute(builder: (context) => BankCardFormScreen(card: card)),
+    );
+    if (result == true) {
+      setState(() {});
+    }
   }
 }

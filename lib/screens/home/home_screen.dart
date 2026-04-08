@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:personal_cards_manager/data/local_db_service.dart';
 import 'package:personal_cards_manager/data/models/models.dart';
+import 'package:personal_cards_manager/screens/bank_cards/bank_cards_list_screen.dart';
+import 'package:personal_cards_manager/screens/member_cards/member_cards_list_screen.dart';
+import 'package:personal_cards_manager/screens/documents/documents_list_screen.dart';
+import 'package:personal_cards_manager/screens/bank_cards/bank_card_form_screen.dart';
+import 'package:personal_cards_manager/screens/member_cards/member_card_form_screen.dart';
+import 'package:personal_cards_manager/screens/documents/id_card_form_screen.dart';
 
 final bankCardCountProvider = FutureProvider<int>((ref) async {
   final isar = await ref.watch(localDbProvider.future);
@@ -60,6 +65,7 @@ class HomeScreen extends ConsumerWidget {
             children: [
               _buildOverviewSection(
                 context,
+                ref,
                 bankCardCount,
                 memberCardCount,
                 idCardCount,
@@ -81,6 +87,7 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildOverviewSection(
     BuildContext context,
+    WidgetRef ref,
     AsyncValue<int> bankCardCount,
     AsyncValue<int> memberCardCount,
     AsyncValue<int> idCardCount,
@@ -99,6 +106,12 @@ class HomeScreen extends ConsumerWidget {
                 bankCardCount,
                 Icons.credit_card,
                 Colors.blue,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BankCardsListScreen(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -109,6 +122,12 @@ class HomeScreen extends ConsumerWidget {
                 memberCardCount,
                 Icons.card_membership,
                 Colors.orange,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MemberCardsListScreen(),
+                  ),
+                ),
               ),
             ),
           ],
@@ -123,6 +142,12 @@ class HomeScreen extends ConsumerWidget {
                 idCardCount,
                 Icons.badge,
                 Colors.green,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DocumentsListScreen(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -133,6 +158,7 @@ class HomeScreen extends ConsumerWidget {
                 const AsyncValue.data(0),
                 Icons.star,
                 Colors.amber,
+                null,
               ),
             ),
           ],
@@ -147,33 +173,38 @@ class HomeScreen extends ConsumerWidget {
     AsyncValue<int> count,
     IconData icon,
     Color color,
+    VoidCallback? onTap,
   ) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 12),
-            count.when(
-              loading: () => const CircularProgressIndicator(),
-              error: (err, stack) => const Text('-'),
-              data: (value) => Text(
-                value.toString(),
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color, size: 32),
+              const SizedBox(height: 12),
+              count.when(
+                loading: () => const CircularProgressIndicator(),
+                error: (err, stack) => const Text('-'),
+                data: (value) => Text(
+                  value.toString(),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                title,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(color: Colors.grey),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -296,20 +327,23 @@ class HomeScreen extends ConsumerWidget {
   }
 
   void _addBankCard(BuildContext context) {
-    ScaffoldMessenger.of(
+    Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('添加银行卡功能开发中')));
+      MaterialPageRoute(builder: (context) => const BankCardFormScreen()),
+    );
   }
 
   void _addMemberCard(BuildContext context) {
-    ScaffoldMessenger.of(
+    Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('添加会员卡功能开发中')));
+      MaterialPageRoute(builder: (context) => const MemberCardFormScreen()),
+    );
   }
 
   void _addDocument(BuildContext context) {
-    ScaffoldMessenger.of(
+    Navigator.push(
       context,
-    ).showSnackBar(const SnackBar(content: Text('添加证件功能开发中')));
+      MaterialPageRoute(builder: (context) => const IDCardFormScreen()),
+    );
   }
 }
