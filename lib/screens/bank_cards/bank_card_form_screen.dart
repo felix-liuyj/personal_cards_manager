@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:isar/isar.dart';
 import 'package:personal_cards_manager/data/local_db_service.dart';
 import 'package:personal_cards_manager/data/models/models.dart';
-import 'package:uuid/uuid.dart';
 
 class BankCardFormScreen extends ConsumerStatefulWidget {
   final BankCard? card;
@@ -16,7 +14,6 @@ class BankCardFormScreen extends ConsumerStatefulWidget {
 
 class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _uuid = const Uuid();
 
   late TextEditingController _issuerNameController;
   late TextEditingController _cardNameController;

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_cards_manager/core/database/database_service.dart';
+import 'package:isar/isar.dart';
+import 'package:personal_cards_manager/data/local_db_service.dart';
+import 'package:personal_cards_manager/data/models/models.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -21,9 +23,35 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     }
 
     setState(() => _isSearching = true);
-    final results = await DatabaseService.instance.search(query);
+
+    final isar = await ref.read(localDbProvider.future);
+    final lowerQuery = query.toLowerCase();
+
+    final allBankCards = await isar.bankCards.where().findAll();
+    final allMemberCards = await isar.memberCards.where().findAll();
+    final allDocuments = await isar.iDCards.where().findAll();
+
+    final bankCards = allBankCards.where((card) {
+      return (card.issuerName?.toLowerCase().contains(lowerQuery) ?? false) ||
+          (card.aliasName?.toLowerCase().contains(lowerQuery) ?? false) ||
+          (card.holderName?.toLowerCase().contains(lowerQuery) ?? false) ||
+          (card.fullNumber?.contains(query) ?? false);
+    }).toList();
+
+    final memberCards = allMemberCards.where((card) {
+      return (card.brand?.toLowerCase().contains(lowerQuery) ?? false) ||
+          (card.memberNumber?.contains(query) ?? false) ||
+          (card.aliasName?.toLowerCase().contains(lowerQuery) ?? false);
+    }).toList();
+
+    final documents = allDocuments.where((doc) {
+      return (doc.cardName?.toLowerCase().contains(lowerQuery) ?? false) ||
+          (doc.fullName?.toLowerCase().contains(lowerQuery) ?? false) ||
+          (doc.documentNumber?.contains(query) ?? false);
+    }).toList();
+
     setState(() {
-      _results = results;
+      _results = [...bankCards, ...memberCards, ...documents];
       _isSearching = false;
     });
   }
@@ -112,17 +140,31 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     String subtitle = '';
     IconData icon = Icons.credit_card;
 
-    if (item.runtimeType.toString() == 'BankCard') {
-      title = item.cardName.isNotEmpty ? item.cardName : item.issuerName;
-      subtitle = item.maskedNumber;
+    if (item is BankCard) {
+      title = item.cardName?.isNotEmpty == true
+          ? item.cardName!
+          : item.issuerName ?? '';
+      final maskedNumber =
+          item.fullNumber != null && item.fullNumber!.length >= 4
+          ? '**** **** **** ${item.fullNumber!.substring(item.fullNumber!.length - 4)}'
+          : '****';
+      subtitle = maskedNumber;
       icon = Icons.credit_card;
-    } else if (item.runtimeType.toString() == 'MemberCard') {
-      title = item.cardName.isNotEmpty ? item.cardName : item.brandName;
-      subtitle = '会员号: ${item.memberNumber}';
+    } else if (item is MemberCard) {
+      title = item.cardName?.isNotEmpty == true
+          ? item.cardName!
+          : item.brand ?? '';
+      subtitle = '会员号: ${item.memberNumber ?? ''}';
       icon = Icons.card_membership;
-    } else if (item.runtimeType.toString() == 'IdentityDocument') {
-      title = item.documentName.isNotEmpty ? item.documentName : item.name;
-      subtitle = item.maskedNumber;
+    } else if (item is IDCard) {
+      title = item.cardName?.isNotEmpty == true
+          ? item.cardName!
+          : item.fullName ?? '';
+      final maskedNumber =
+          item.documentNumber != null && item.documentNumber!.length >= 4
+          ? '**** **** **** ${item.documentNumber!.substring(item.documentNumber!.length - 4)}'
+          : '****';
+      subtitle = maskedNumber;
       icon = Icons.badge;
     }
 
@@ -133,7 +175,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         title: Text(title),
         subtitle: Text(subtitle),
         onTap: () {
-          // TODO: Navigate to detail screen
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('查看: $title')));

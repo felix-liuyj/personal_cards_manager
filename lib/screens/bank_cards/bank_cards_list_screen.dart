@@ -4,7 +4,6 @@ import 'package:isar/isar.dart';
 import 'package:personal_cards_manager/data/local_db_service.dart';
 import 'package:personal_cards_manager/data/models/models.dart';
 import 'package:personal_cards_manager/screens/bank_cards/bank_card_form_screen.dart';
-import 'package:personal_cards_manager/widgets/secure_text.dart';
 
 class BankCardsListScreen extends ConsumerStatefulWidget {
   const BankCardsListScreen({super.key});
