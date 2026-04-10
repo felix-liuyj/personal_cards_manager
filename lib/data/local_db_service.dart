@@ -8,9 +8,9 @@ final localDbProvider = FutureProvider<Isar>((ref) async {
   
   // 初始化 Isar 纯本地容器实例 (数据落盘已受到系统硬件与 iOS/Android 沙盒的双重保护)
   final isar = await Isar.open(
-    [BankCardSchema, MemberCardSchema, IDCardSchema, CustomTagSchema],
+    [BankCardSchema, MemberCardSchema, IDCardSchema, CustomTagSchema, CustomGroupSchema],
     directory: dir.path,
-    inspector: true, // 开启调试支持
+    inspector: true,
   );
   
   return isar;

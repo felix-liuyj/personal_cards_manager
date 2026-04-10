@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_cards_manager/data/local_db_service.dart';
 import 'package:personal_cards_manager/data/models/models.dart';
+import 'package:personal_cards_manager/screens/tags/tag_group_selector.dart';
 
 class MemberCardFormScreen extends ConsumerStatefulWidget {
   final MemberCard? card;
@@ -30,6 +31,9 @@ class _MemberCardFormScreenState extends ConsumerState<MemberCardFormScreen> {
   DateTime? _validUntil;
   bool _isFavorite = false;
   String _selectedTemplate = 'default';
+
+  List<CustomTag> _selectedTags = [];
+  CustomGroup? _selectedGroup;
 
   bool get _isEditing => widget.card != null;
 
@@ -60,6 +64,8 @@ class _MemberCardFormScreenState extends ConsumerState<MemberCardFormScreen> {
       _validUntil = card.validUntil;
       _isFavorite = card.isFavorite;
       _selectedTemplate = card.templateName ?? 'default';
+      _selectedTags = card.tags.toList();
+      _selectedGroup = card.groups.isNotEmpty ? card.groups.first : null;
     }
   }
 
@@ -105,6 +111,12 @@ class _MemberCardFormScreenState extends ConsumerState<MemberCardFormScreen> {
 
     await isar.writeTxn(() async {
       await isar.memberCards.put(card);
+      card.tags.clear();
+      card.tags.addAll(_selectedTags);
+      card.groups.clear();
+      if (_selectedGroup != null) card.groups.add(_selectedGroup!);
+      await card.tags.save();
+      await card.groups.save();
     });
 
     if (mounted) {
@@ -145,6 +157,14 @@ class _MemberCardFormScreenState extends ConsumerState<MemberCardFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            ref.watch(localDbProvider).whenOrNull(data: (isar) => TagGroupSelector(
+              isar: isar,
+              selectedTags: _selectedTags,
+              selectedGroup: _selectedGroup,
+              onTagsChanged: (t) => setState(() => _selectedTags = t),
+              onGroupChanged: (g) => setState(() => _selectedGroup = g),
+            )) ?? const SizedBox.shrink(),
+            const SizedBox(height: 16),
             _buildSectionTitle('基本信息'),
             TextFormField(
               controller: _brandController,

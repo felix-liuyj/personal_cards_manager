@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_cards_manager/data/local_db_service.dart';
 import 'package:personal_cards_manager/data/models/models.dart';
+import 'package:personal_cards_manager/screens/tags/tag_group_selector.dart';
 
 class BankCardFormScreen extends ConsumerStatefulWidget {
   final BankCard? card;
@@ -35,6 +36,9 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
   String _selectedCurrency = 'CNY';
   String _selectedColor = 'blue';
   bool _isFavorite = false;
+
+  List<CustomTag> _selectedTags = [];
+  CustomGroup? _selectedGroup;
 
   final List<String> _networks = [
     'Visa',
@@ -86,6 +90,8 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
       _selectedCurrency = card.currency ?? 'CNY';
       _selectedColor = card.colorTheme ?? 'blue';
       _isFavorite = card.isFavorite;
+      _selectedTags = card.tags.toList();
+      _selectedGroup = card.groups.isNotEmpty ? card.groups.first : null;
     }
   }
 
@@ -140,6 +146,12 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
 
     await isar.writeTxn(() async {
       await isar.bankCards.put(card);
+      card.tags.clear();
+      card.tags.addAll(_selectedTags);
+      card.groups.clear();
+      if (_selectedGroup != null) card.groups.add(_selectedGroup!);
+      await card.tags.save();
+      await card.groups.save();
     });
 
     if (mounted) {
@@ -168,6 +180,14 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            ref.watch(localDbProvider).whenOrNull(data: (isar) => TagGroupSelector(
+              isar: isar,
+              selectedTags: _selectedTags,
+              selectedGroup: _selectedGroup,
+              onTagsChanged: (t) => setState(() => _selectedTags = t),
+              onGroupChanged: (g) => setState(() => _selectedGroup = g),
+            )) ?? const SizedBox.shrink(),
+            const SizedBox(height: 16),
             _buildSectionTitle('基本信息'),
             TextFormField(
               controller: _issuerNameController,

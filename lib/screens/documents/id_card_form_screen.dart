@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_cards_manager/data/local_db_service.dart';
 import 'package:personal_cards_manager/data/models/models.dart';
 import 'package:personal_cards_manager/features/id_cards/id_card_factory.dart';
+import 'package:personal_cards_manager/screens/tags/tag_group_selector.dart';
 
 class IDCardFormScreen extends ConsumerStatefulWidget {
   final IDCard? card;
@@ -33,6 +34,9 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
   DateTime? _expireDate;
   bool _isFavorite = false;
   String _selectedTemplate = 'default';
+
+  List<CustomTag> _selectedTags = [];
+  CustomGroup? _selectedGroup;
 
   final List<Map<String, String>> _countries = [
     {'code': 'CN', 'name': '中国'},
@@ -111,6 +115,8 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
       _expireDate = card.expireDate;
       _isFavorite = card.isFavorite;
       _selectedTemplate = card.templateName ?? 'default';
+      _selectedTags = card.tags.toList();
+      _selectedGroup = card.groups.isNotEmpty ? card.groups.first : null;
     }
   }
 
@@ -160,6 +166,12 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
 
     await isar.writeTxn(() async {
       await isar.iDCards.put(card);
+      card.tags.clear();
+      card.tags.addAll(_selectedTags);
+      card.groups.clear();
+      if (_selectedGroup != null) card.groups.add(_selectedGroup!);
+      await card.tags.save();
+      await card.groups.save();
     });
 
     if (mounted) {
@@ -237,6 +249,14 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            ref.watch(localDbProvider).whenOrNull(data: (isar) => TagGroupSelector(
+              isar: isar,
+              selectedTags: _selectedTags,
+              selectedGroup: _selectedGroup,
+              onTagsChanged: (t) => setState(() => _selectedTags = t),
+              onGroupChanged: (g) => setState(() => _selectedGroup = g),
+            )) ?? const SizedBox.shrink(),
+            const SizedBox(height: 16),
             _buildSectionTitle('证件类型'),
             DropdownButtonFormField<String>(
               value: _selectedCountry,

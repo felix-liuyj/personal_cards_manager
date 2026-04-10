@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/init_auth/auth_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/auth/auth_screen.dart';
+import 'core/notifications/notification_service.dart';
+import 'core/security/auto_lock_wrapper.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await NotificationService.initialize();
   runApp(const ProviderScope(child: PersonalCardsApp()));
 }
 
@@ -16,27 +19,7 @@ class PersonalCardsApp extends ConsumerStatefulWidget {
   ConsumerState<PersonalCardsApp> createState() => _PersonalCardsAppState();
 }
 
-class _PersonalCardsAppState extends ConsumerState<PersonalCardsApp>
-    with WidgetsBindingObserver {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.hidden) {
-      ref.read(authStateProvider.notifier).lock();
-    }
-  }
+class _PersonalCardsAppState extends ConsumerState<PersonalCardsApp> {
 
   @override
   Widget build(BuildContext context) {
@@ -96,9 +79,11 @@ class _PersonalCardsAppState extends ConsumerState<PersonalCardsApp>
         ),
       ),
       themeMode: ThemeMode.system,
-      home: authState == AuthState.locked
-          ? const AuthScreen()
-          : const HomeScreen(),
+      home: AutoLockWrapper(
+        child: authState == AuthState.locked
+            ? const AuthScreen()
+            : const HomeScreen(),
+      ),
     );
   }
 }

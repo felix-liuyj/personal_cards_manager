@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:personal_cards_manager/core/security/biometric_service.dart';
+import 'package:personal_cards_manager/features/init_auth/auth_provider.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -15,14 +15,13 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _authenticate() async {
     setState(() => _isLoading = true);
 
-    final biometricService = ref.read(biometricServiceProvider);
-    final success = await biometricService.authenticate('请验证身份以访问您的卡片');
+    // 调用 provider 的 authenticate 方法，若成功它会更新内部状态
+    await ref.read(authStateProvider.notifier).authenticate();
 
     if (!mounted) return;
 
-    if (success) {
-      // Authentication successful - the authStateProvider will update
-    } else {
+    final authState = ref.read(authStateProvider);
+    if (authState == AuthState.locked) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(
         context,
