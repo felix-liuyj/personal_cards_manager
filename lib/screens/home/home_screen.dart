@@ -18,6 +18,7 @@ import 'package:personal_cards_manager/screens/home/archived_cards_screen.dart';
 import 'package:personal_cards_manager/screens/home/favorites_screen.dart';
 import 'package:personal_cards_manager/features/home/recent_usage_service.dart';
 import 'package:personal_cards_manager/core/notifications/notification_service.dart';
+import 'package:personal_cards_manager/widgets/fabric_texture.dart';
 
 final recentViewedProvider = FutureProvider<List<RecentEntry>>((ref) async {
   return await ref.read(recentUsageServiceProvider).getRecentViewed();
@@ -100,7 +101,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   void initState() {
     super.initState();
     // Schedule expiry notifications once after DB is ready
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scheduleExpiryNotifications());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scheduleExpiryNotifications(),
+    );
   }
 
   Future<void> _scheduleExpiryNotifications() async {
@@ -122,7 +125,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (c.expMonth != null && c.expYear != null) {
           final expiry = DateTime(c.expYear!, c.expMonth! + 1, 0);
           if (expiry.isBefore(threshold)) {
-            final label = c.cardName?.isNotEmpty == true ? c.cardName! : c.issuerName ?? '银行卡';
+            final label = c.cardName?.isNotEmpty == true
+                ? c.cardName!
+                : c.issuerName ?? '银行卡';
             final daysLeft = expiry.difference(now).inDays;
             await ns.scheduleExpiry(
               id: notifId++,
@@ -134,7 +139,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
       for (final c in members.where((c) => !c.isArchived)) {
         if (c.validUntil != null && c.validUntil!.isBefore(threshold)) {
-          final label = c.cardName?.isNotEmpty == true ? c.cardName! : c.brand ?? '会员卡';
+          final label = c.cardName?.isNotEmpty == true
+              ? c.cardName!
+              : c.brand ?? '会员卡';
           final daysLeft = c.validUntil!.difference(now).inDays;
           await ns.scheduleExpiry(
             id: notifId++,
@@ -145,7 +152,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       }
       for (final d in docs.where((d) => !d.isArchived)) {
         if (d.expireDate != null && d.expireDate!.isBefore(threshold)) {
-          final label = d.cardName?.isNotEmpty == true ? d.cardName! : d.fullName ?? '证件';
+          final label = d.cardName?.isNotEmpty == true
+              ? d.cardName!
+              : d.fullName ?? '证件';
           final daysLeft = d.expireDate!.difference(now).inDays;
           await ns.scheduleExpiry(
             id: notifId++,
@@ -170,7 +179,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('卡片管理'),
+        title: const Text('卡片包'),
         actions: [
           IconButton(
             icon: const Icon(Icons.search),
@@ -188,28 +197,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(bankCardCountProvider);
-          ref.invalidate(memberCardCountProvider);
-          ref.invalidate(idCardCountProvider);
-          ref.invalidate(favoriteCountProvider);
-          ref.invalidate(expiringCardsProvider);
-          ref.invalidate(recentViewedProvider);
-        },
-        child: SingleChildScrollView(
-          physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildOverviewGrid(context, ref, bankCardCount, memberCardCount, idCardCount, favoriteCount),
-              const SizedBox(height: 24),
-              _buildQuickActions(context, ref),
-              const SizedBox(height: 24),
-              _buildRecentSection(context, ref, recentViewed),
-              _buildExpiringSection(context, ref, expiringCards),
-            ],
+      body: FabricTextureContainer(
+        pattern: FabricPattern.linen,
+        textureOpacity: 0.12,
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(bankCardCountProvider);
+            ref.invalidate(memberCardCountProvider);
+            ref.invalidate(idCardCountProvider);
+            ref.invalidate(favoriteCountProvider);
+            ref.invalidate(expiringCardsProvider);
+            ref.invalidate(recentViewedProvider);
+          },
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildOverviewGrid(
+                  context,
+                  ref,
+                  bankCardCount,
+                  memberCardCount,
+                  idCardCount,
+                  favoriteCount,
+                ),
+                const SizedBox(height: 24),
+                _buildQuickActions(context, ref),
+                const SizedBox(height: 24),
+                _buildRecentSection(context, ref, recentViewed),
+                _buildExpiringSection(context, ref, expiringCards),
+              ],
+            ),
           ),
         ),
       ),
@@ -232,7 +252,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('概览', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          '概览',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         Row(
           children: [
@@ -243,8 +268,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 bankCardCount,
                 Icons.credit_card,
                 Colors.blue,
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const BankCardsListScreen())),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const BankCardsListScreen(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -255,8 +284,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 memberCardCount,
                 Icons.card_membership,
                 Colors.orange,
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const MemberCardsListScreen())),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const MemberCardsListScreen(),
+                  ),
+                ),
               ),
             ),
           ],
@@ -271,8 +304,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 idCardCount,
                 Icons.badge,
                 Colors.green,
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const DocumentsListScreen())),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const DocumentsListScreen(),
+                  ),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -283,8 +320,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 favoriteCount,
                 Icons.star,
                 Colors.amber,
-                () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const FavoritesScreen())),
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const FavoritesScreen()),
+                ),
               ),
             ),
           ],
@@ -318,7 +357,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Icon(icon, color: color, size: 24),
                   if (onTap != null)
-                    Icon(Icons.arrow_forward_ios, size: 12, color: color.withValues(alpha: 0.6)),
+                    Icon(
+                      Icons.arrow_forward_ios,
+                      size: 12,
+                      color: color.withValues(alpha: 0.6),
+                    ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -354,17 +397,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Widget _buildQuickActions(BuildContext context, WidgetRef ref) {
     final actions = [
-      _ActionItem('添加银行卡', Icons.add_card, Colors.blue, () => _addBankCard(context)),
-      _ActionItem('添加会员卡', Icons.card_membership, Colors.orange, () => _addMemberCard(context)),
-      _ActionItem('添加证件', Icons.badge, Colors.green, () => _addDocument(context)),
-      _ActionItem('归档', Icons.archive_outlined, Colors.blueGrey, () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => const ArchivedCardsScreen()))),
+      _ActionItem(
+        '添加银行卡',
+        Icons.add_card,
+        Colors.blue,
+        () => _addBankCard(context),
+      ),
+      _ActionItem(
+        '添加会员卡',
+        Icons.card_membership,
+        Colors.orange,
+        () => _addMemberCard(context),
+      ),
+      _ActionItem(
+        '添加证件',
+        Icons.badge,
+        Colors.green,
+        () => _addDocument(context),
+      ),
+      _ActionItem(
+        '归档',
+        Icons.archive_outlined,
+        Colors.blueGrey,
+        () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ArchivedCardsScreen()),
+        ),
+      ),
     ];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('快捷操作', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
+        Text(
+          '快捷操作',
+          style: Theme.of(
+            context,
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -390,12 +460,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('最近查看',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text('查看全部'),
+                Text(
+                  '最近查看',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
+                TextButton(onPressed: () {}, child: const Text('查看全部')),
               ],
             ),
             SizedBox(
@@ -408,13 +479,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   final icon = entry.type == 'bank'
                       ? Icons.credit_card
                       : entry.type == 'member'
-                          ? Icons.card_membership
-                          : Icons.badge;
+                      ? Icons.card_membership
+                      : Icons.badge;
                   final color = entry.type == 'bank'
                       ? Colors.blue
                       : entry.type == 'member'
-                          ? Colors.orange
-                          : Colors.green;
+                      ? Colors.orange
+                      : Colors.green;
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
                     child: InkWell(
@@ -422,11 +493,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       onTap: () => _openRecentEntry(context, ref, entry),
                       child: Container(
                         width: 76,
-                        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 10,
+                          horizontal: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: color.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: color.withValues(alpha: 0.2)),
+                          border: Border.all(
+                            color: color.withValues(alpha: 0.2),
+                          ),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -475,7 +551,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               const SizedBox(height: 8),
               Text(
                 item.label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -485,7 +563,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  Widget _buildExpiringSection(BuildContext context, WidgetRef ref, AsyncValue<List<dynamic>> expiringCards) {
+  Widget _buildExpiringSection(
+    BuildContext context,
+    WidgetRef ref,
+    AsyncValue<List<dynamic>> expiringCards,
+  ) {
     return expiringCards.when(
       loading: () => const SizedBox.shrink(),
       error: (_, _) => const SizedBox.shrink(),
@@ -497,7 +579,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           children: [
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 20),
+                const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange,
+                  size: 20,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '即将过期 (${items.length})',
@@ -529,7 +615,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     bool isExpired = false;
 
     if (item is BankCard) {
-      title = item.cardName?.isNotEmpty == true ? item.cardName! : item.issuerName ?? '银行卡';
+      title = item.cardName?.isNotEmpty == true
+          ? item.cardName!
+          : item.issuerName ?? '银行卡';
       expiry = '${item.expMonth?.toString().padLeft(2, '0')}/${item.expYear}';
       icon = Icons.credit_card;
       color = Colors.blue;
@@ -538,7 +626,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           : null;
       isExpired = expDate?.isBefore(DateTime.now()) ?? false;
     } else if (item is MemberCard) {
-      title = item.cardName?.isNotEmpty == true ? item.cardName! : item.brand ?? '会员卡';
+      title = item.cardName?.isNotEmpty == true
+          ? item.cardName!
+          : item.brand ?? '会员卡';
       expiry = item.validUntil != null
           ? '${item.validUntil!.year}-${item.validUntil!.month.toString().padLeft(2, '0')}-${item.validUntil!.day.toString().padLeft(2, '0')}'
           : '未知';
@@ -546,7 +636,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       color = Colors.orange;
       isExpired = item.validUntil?.isBefore(DateTime.now()) ?? false;
     } else if (item is IDCard) {
-      title = item.cardName?.isNotEmpty == true ? item.cardName! : item.fullName ?? '证件';
+      title = item.cardName?.isNotEmpty == true
+          ? item.cardName!
+          : item.fullName ?? '证件';
       expiry = item.expireDate != null
           ? '${item.expireDate!.year}-${item.expireDate!.month.toString().padLeft(2, '0')}-${item.expireDate!.day.toString().padLeft(2, '0')}'
           : '未知';
@@ -564,7 +656,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isExpired ? Colors.red.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
+          color: isExpired
+              ? Colors.red.withValues(alpha: 0.2)
+              : Colors.orange.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
@@ -587,14 +681,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ),
         onTap: () {
           if (item is BankCard) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => BankCardDetailScreen(card: item)));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BankCardDetailScreen(card: item),
+              ),
+            );
           } else if (item is MemberCard) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => MemberCardDetailScreen(card: item)));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MemberCardDetailScreen(card: item),
+              ),
+            );
           } else if (item is IDCard) {
-            Navigator.push(context,
-                MaterialPageRoute(builder: (_) => DocumentDetailScreen(card: item)));
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DocumentDetailScreen(card: item),
+              ),
+            );
           }
         },
       ),
@@ -663,38 +769,69 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _addBankCard(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const BankCardFormScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const BankCardFormScreen()),
+    );
   }
 
   void _addMemberCard(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const MemberCardFormScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MemberCardFormScreen()),
+    );
   }
 
   void _addDocument(BuildContext context) {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => const IDCardFormScreen()));
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const IDCardFormScreen()),
+    );
   }
 
-  Future<void> _openRecentEntry(BuildContext context, WidgetRef ref, RecentEntry entry) async {
+  Future<void> _openRecentEntry(
+    BuildContext context,
+    WidgetRef ref,
+    RecentEntry entry,
+  ) async {
     final isar = await ref.read(localDbProvider.future);
     bool shouldRefresh = false;
 
     if (entry.type == 'bank') {
       final card = await isar.bankCards.get(entry.id);
       if (card != null && context.mounted) {
-        shouldRefresh = await Navigator.push(context, 
-          MaterialPageRoute(builder: (_) => BankCardDetailScreen(card: card))) == true;
+        shouldRefresh =
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BankCardDetailScreen(card: card),
+              ),
+            ) ==
+            true;
       }
     } else if (entry.type == 'member') {
       final card = await isar.memberCards.get(entry.id);
       if (card != null && context.mounted) {
-        shouldRefresh = await Navigator.push(context, 
-          MaterialPageRoute(builder: (_) => MemberCardDetailScreen(card: card))) == true;
+        shouldRefresh =
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => MemberCardDetailScreen(card: card),
+              ),
+            ) ==
+            true;
       }
     } else if (entry.type == 'id') {
       final card = await isar.iDCards.get(entry.id);
       if (card != null && context.mounted) {
-        shouldRefresh = await Navigator.push(context, 
-          MaterialPageRoute(builder: (_) => DocumentDetailScreen(card: card))) == true;
+        shouldRefresh =
+            await Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => DocumentDetailScreen(card: card),
+              ),
+            ) ==
+            true;
       }
     }
 
