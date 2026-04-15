@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:personal_cards_manager/features/init_auth/auth_provider.dart';
+import 'package:personal_cards_manager/core/utils/debug_logger.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
   const AuthScreen({super.key});
@@ -16,12 +17,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   void initState() {
     super.initState();
     // 启动时自动触发指纹验证
+    ref.read(debugLoggerProvider.notifier).info('AuthScreen: 初始化，准备自动触发验证');
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(debugLoggerProvider.notifier).info('AuthScreen: 自动触发验证');
       _authenticate();
     });
   }
 
   Future<void> _authenticate() async {
+    ref
+        .read(debugLoggerProvider.notifier)
+        .info('AuthScreen: _authenticate 被调用');
     setState(() => _isLoading = true);
 
     // 调用 provider 的 authenticate 方法，若成功它会更新内部状态
@@ -30,6 +36,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     if (!mounted) return;
 
     final authState = ref.read(authStateProvider);
+    ref
+        .read(debugLoggerProvider.notifier)
+        .info('AuthScreen: 验证完成，当前状态=$authState');
+
     if (authState == AuthState.locked) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(

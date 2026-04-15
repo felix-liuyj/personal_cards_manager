@@ -7,6 +7,7 @@ import 'package:personal_cards_manager/features/settings/backup_service.dart';
 import 'package:personal_cards_manager/features/init_auth/auth_provider.dart';
 import 'package:personal_cards_manager/screens/tags/tags_management_screen.dart';
 import 'package:personal_cards_manager/core/security/biometric_service.dart';
+import 'package:personal_cards_manager/screens/settings/debug_log_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -107,6 +108,16 @@ class SettingsScreen extends ConsumerWidget {
             leading: Icon(Icons.info_outline),
             title: Text('应用版本'),
             trailing: Text('1.0.0', style: TextStyle(color: Colors.grey)),
+          ),
+          ListTile(
+            leading: const Icon(Icons.bug_report_outlined),
+            title: const Text('调试日志'),
+            subtitle: const Text('查看应用运行日志'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const DebugLogScreen()),
+            ),
           ),
           ListTile(
             leading: const Icon(Icons.lock_outline),
