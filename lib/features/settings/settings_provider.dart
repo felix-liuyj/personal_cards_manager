@@ -17,8 +17,8 @@ class AppSettings {
   final int clipboardClearSeconds;
 
   const AppSettings({
-    this.biometricsEnabled = true,
-    this.autoLockEnabled = true,
+    this.biometricsEnabled = false,
+    this.autoLockEnabled = false,
     this.autoLockMinutes = 5,
     this.clipboardClearEnabled = true,
     this.clipboardClearSeconds = 60,
@@ -35,8 +35,10 @@ class AppSettings {
       biometricsEnabled: biometricsEnabled ?? this.biometricsEnabled,
       autoLockEnabled: autoLockEnabled ?? this.autoLockEnabled,
       autoLockMinutes: autoLockMinutes ?? this.autoLockMinutes,
-      clipboardClearEnabled: clipboardClearEnabled ?? this.clipboardClearEnabled,
-      clipboardClearSeconds: clipboardClearSeconds ?? this.clipboardClearSeconds,
+      clipboardClearEnabled:
+          clipboardClearEnabled ?? this.clipboardClearEnabled,
+      clipboardClearSeconds:
+          clipboardClearSeconds ?? this.clipboardClearSeconds,
     );
   }
 }
@@ -44,8 +46,8 @@ class AppSettings {
 // ==================== Provider ====================
 final appSettingsProvider =
     StateNotifierProvider<AppSettingsNotifier, AppSettings>((ref) {
-  return AppSettingsNotifier();
-});
+      return AppSettingsNotifier();
+    });
 
 class AppSettingsNotifier extends StateNotifier<AppSettings> {
   AppSettingsNotifier() : super(const AppSettings()) {
@@ -55,8 +57,8 @@ class AppSettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
     state = AppSettings(
-      biometricsEnabled: prefs.getBool(_kBiometricsEnabled) ?? true,
-      autoLockEnabled: prefs.getBool(_kAutoLockEnabled) ?? true,
+      biometricsEnabled: prefs.getBool(_kBiometricsEnabled) ?? false,
+      autoLockEnabled: prefs.getBool(_kAutoLockEnabled) ?? false,
       autoLockMinutes: prefs.getInt(_kAutoLockMinutes) ?? 5,
       clipboardClearEnabled: prefs.getBool(_kClipboardClearEnabled) ?? true,
       clipboardClearSeconds: prefs.getInt(_kClipboardClearSeconds) ?? 60,

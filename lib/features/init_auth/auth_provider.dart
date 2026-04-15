@@ -1,16 +1,22 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/security/biometric_service.dart';
+import '../settings/settings_provider.dart';
 
 enum AuthState { locked, unlocked }
 
 final authStateProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
-  return AuthNotifier(ref.read(biometricServiceProvider));
+  final settings = ref.watch(appSettingsProvider);
+  return AuthNotifier(
+    ref.read(biometricServiceProvider),
+    settings.biometricsEnabled,
+  );
 });
 
 class AuthNotifier extends StateNotifier<AuthState> {
   final BiometricService _biometricService;
 
-  AuthNotifier(this._biometricService) : super(AuthState.locked);
+  AuthNotifier(this._biometricService, bool biometricsEnabled)
+    : super(biometricsEnabled ? AuthState.locked : AuthState.unlocked);
 
   /// 执行高安全验证以解锁应用
   Future<void> authenticate() async {
