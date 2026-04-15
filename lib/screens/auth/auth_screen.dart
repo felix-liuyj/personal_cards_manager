@@ -12,6 +12,15 @@ class AuthScreen extends ConsumerStatefulWidget {
 class _AuthScreenState extends ConsumerState<AuthScreen> {
   bool _isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    // 启动时自动触发指纹验证
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _authenticate();
+    });
+  }
+
   Future<void> _authenticate() async {
     setState(() => _isLoading = true);
 

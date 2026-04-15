@@ -6,6 +6,7 @@ import 'package:personal_cards_manager/features/settings/settings_provider.dart'
 import 'package:personal_cards_manager/features/settings/backup_service.dart';
 import 'package:personal_cards_manager/features/init_auth/auth_provider.dart';
 import 'package:personal_cards_manager/screens/tags/tags_management_screen.dart';
+import 'package:personal_cards_manager/core/security/biometric_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -24,7 +25,7 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('生物识别解锁'),
             subtitle: const Text('使用面容 ID / 指纹解锁应用'),
             value: settings.biometricsEnabled,
-            onChanged: (v) => notifier.setBiometricsEnabled(v),
+            onChanged: (v) => _handleBiometricToggle(context, ref, notifier, v),
           ),
           SwitchListTile(
             title: const Text('自动锁定'),
@@ -40,7 +41,11 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               title: const Text('自动锁定时间'),
               trailing: Text('${settings.autoLockMinutes} 分钟'),
-              onTap: () => _selectAutoLockTime(context, notifier, settings.autoLockMinutes),
+              onTap: () => _selectAutoLockTime(
+                context,
+                notifier,
+                settings.autoLockMinutes,
+              ),
             ),
 
           const Divider(height: 1),
@@ -59,8 +64,11 @@ class SettingsScreen extends ConsumerWidget {
             ListTile(
               title: const Text('清除延迟'),
               trailing: Text('${settings.clipboardClearSeconds} 秒'),
-              onTap: () =>
-                  _selectClipboardClearTime(context, notifier, settings.clipboardClearSeconds),
+              onTap: () => _selectClipboardClearTime(
+                context,
+                notifier,
+                settings.clipboardClearSeconds,
+              ),
             ),
 
           const Divider(height: 1),
@@ -87,7 +95,10 @@ class SettingsScreen extends ConsumerWidget {
             leading: const Icon(Icons.label_outline),
             title: const Text('分类管理 (标签/分组)'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TagsManagementScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const TagsManagementScreen()),
+            ),
           ),
 
           const Divider(height: 1),
@@ -122,7 +133,58 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  void _selectAutoLockTime(BuildContext context, AppSettingsNotifier notifier, int current) {
+  Future<void> _handleBiometricToggle(
+    BuildContext context,
+    WidgetRef ref,
+    AppSettingsNotifier notifier,
+    bool enable,
+  ) async {
+    if (enable) {
+      // 开启时先验证设备是否支持生物识别
+      final biometricService = ref.read(biometricServiceProvider);
+      final isSupported = await biometricService.isBiometricSupported;
+
+      if (!isSupported) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('您的设备不支持生物识别')));
+        }
+        return;
+      }
+
+      // 验证一次以确保用户可以使用
+      final success = await biometricService.authenticate('验证以启用生物识别解锁');
+      if (success) {
+        await notifier.setBiometricsEnabled(true);
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('生物识别解锁已启用')));
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('验证失败，未启用生物识别')));
+        }
+      }
+    } else {
+      // 关闭时直接关闭
+      await notifier.setBiometricsEnabled(false);
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('生物识别解锁已关闭')));
+      }
+    }
+  }
+
+  void _selectAutoLockTime(
+    BuildContext context,
+    AppSettingsNotifier notifier,
+    int current,
+  ) {
     final options = [1, 3, 5, 10, 15, 30];
     showModalBottomSheet(
       context: context,
@@ -132,24 +194,32 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('选择自动锁定时间',
-                  style: Theme.of(ctx).textTheme.titleMedium),
+              child: Text(
+                '选择自动锁定时间',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
             ),
-            ...options.map((m) => ListTile(
-                  title: Text('$m 分钟'),
-                  trailing: current == m ? const Icon(Icons.check) : null,
-                  onTap: () {
-                    notifier.setAutoLockMinutes(m);
-                    Navigator.pop(ctx);
-                  },
-                )),
+            ...options.map(
+              (m) => ListTile(
+                title: Text('$m 分钟'),
+                trailing: current == m ? const Icon(Icons.check) : null,
+                onTap: () {
+                  notifier.setAutoLockMinutes(m);
+                  Navigator.pop(ctx);
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  void _selectClipboardClearTime(BuildContext context, AppSettingsNotifier notifier, int current) {
+  void _selectClipboardClearTime(
+    BuildContext context,
+    AppSettingsNotifier notifier,
+    int current,
+  ) {
     final options = [10, 30, 60, 120, 300];
     showModalBottomSheet(
       context: context,
@@ -159,17 +229,21 @@ class SettingsScreen extends ConsumerWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
-              child: Text('选择剪贴板清除延迟',
-                  style: Theme.of(ctx).textTheme.titleMedium),
+              child: Text(
+                '选择剪贴板清除延迟',
+                style: Theme.of(ctx).textTheme.titleMedium,
+              ),
             ),
-            ...options.map((s) => ListTile(
-                  title: Text('$s 秒'),
-                  trailing: current == s ? const Icon(Icons.check) : null,
-                  onTap: () {
-                    notifier.setClipboardClearSeconds(s);
-                    Navigator.pop(ctx);
-                  },
-                )),
+            ...options.map(
+              (s) => ListTile(
+                title: Text('$s 秒'),
+                trailing: current == s ? const Icon(Icons.check) : null,
+                onTap: () {
+                  notifier.setClipboardClearSeconds(s);
+                  Navigator.pop(ctx);
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -190,8 +264,9 @@ class SettingsScreen extends ConsumerWidget {
           FilledButton(
             onPressed: () {
               Navigator.pop(ctx);
-              ScaffoldMessenger.of(context)
-                  .showSnackBar(const SnackBar(content: Text('缓存已清除')));
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(const SnackBar(content: Text('缓存已清除')));
             },
             child: const Text('确定'),
           ),
@@ -214,13 +289,19 @@ class SettingsScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             TextField(
               controller: passwordController,
-              decoration: const InputDecoration(labelText: '备份密码', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: '备份密码',
+                border: OutlineInputBorder(),
+              ),
               obscureText: true,
             ),
           ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
           FilledButton(
             onPressed: () {
               if (passwordController.text.trim().isEmpty) return;
@@ -246,7 +327,9 @@ class SettingsScreen extends ConsumerWidget {
       } catch (e) {
         if (context.mounted) {
           Navigator.pop(context); // 移除loading
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('备份失败: $e')));
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('备份失败: $e')));
         }
       }
     }
@@ -257,9 +340,14 @@ class SettingsScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('警告：数据覆盖'),
-        content: const Text('恢复备份将永久删除当前设备上的所有卡片记录，并使用备份文件的数据完全替换。\n\n您确定要继续吗？'),
+        content: const Text(
+          '恢复备份将永久删除当前设备上的所有卡片记录，并使用备份文件的数据完全替换。\n\n您确定要继续吗？',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('取消'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.pop(ctx, true),
@@ -290,13 +378,19 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: passwordController,
-                decoration: const InputDecoration(labelText: '密码', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: '密码',
+                  border: OutlineInputBorder(),
+                ),
                 obscureText: true,
               ),
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('取消')),
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('取消'),
+            ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(ctx, passwordController.text);
@@ -315,17 +409,23 @@ class SettingsScreen extends ConsumerWidget {
             barrierDismissible: false,
             builder: (_) => const Center(child: CircularProgressIndicator()),
           );
-          await ref.read(backupServiceProvider).importData(result.files.single.path!, pwd);
+          await ref
+              .read(backupServiceProvider)
+              .importData(result.files.single.path!, pwd);
           if (context.mounted) {
             Navigator.pop(context); // popup loading
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('数据恢复成功！')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(const SnackBar(content: Text('数据恢复成功！')));
             // Force re-auth or go to home. Let's just lock so user sees fresh state
             ref.read(authStateProvider.notifier).lock();
           }
         } catch (e) {
           if (context.mounted) {
             Navigator.pop(context); // popup loading
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('恢复失败: 密码错误或文件已损坏')));
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('恢复失败: 密码错误或文件已损坏')));
           }
         }
       }
