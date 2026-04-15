@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'features/init_auth/auth_provider.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/auth/auth_screen.dart';
@@ -28,6 +29,16 @@ class _PersonalCardsAppState extends ConsumerState<PersonalCardsApp> {
     return MaterialApp(
       title: '卡片包',
       debugShowCheckedModeBanner: false,
+
+      // 中文本地化
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [Locale('zh', 'CN')],
+      locale: const Locale('zh', 'CN'),
+
       theme: FabricTheme.lightTheme(),
       darkTheme: FabricTheme.darkTheme(),
       themeMode: ThemeMode.system,
