@@ -204,7 +204,7 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedNetwork,
+              initialValue: _selectedNetwork,
               decoration: const InputDecoration(labelText: '卡组织'),
               items: _networks
                   .map((n) => DropdownMenuItem(value: n, child: Text(n)))
@@ -253,7 +253,7 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    value: _expMonth,
+                    initialValue: _expMonth,
                     decoration: const InputDecoration(labelText: '有效期月'),
                     items: List.generate(12, (i) => i + 1)
                         .map(
@@ -269,7 +269,7 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    value: _expYear,
+                    initialValue: _expYear,
                     decoration: const InputDecoration(labelText: '有效期年'),
                     items: List.generate(10, (i) => DateTime.now().year + i)
                         .map(
@@ -345,7 +345,7 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
             const SizedBox(height: 24),
             _buildSectionTitle('其他'),
             DropdownButtonFormField<String>(
-              value: _selectedCurrency,
+              initialValue: _selectedCurrency,
               decoration: const InputDecoration(labelText: '币种'),
               items: _currencies
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))
@@ -354,7 +354,7 @@ class _BankCardFormScreenState extends ConsumerState<BankCardFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedColor,
+              initialValue: _selectedColor,
               decoration: const InputDecoration(labelText: '卡片颜色'),
               items: _colors
                   .map((c) => DropdownMenuItem(value: c, child: Text(c)))

@@ -268,7 +268,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -292,10 +292,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
-      color: Theme.of(context).colorScheme.surface.withOpacity(0.85),
+      color: Theme.of(context).colorScheme.surface.withValues(alpha: 0.85),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: iconColor.withOpacity(0.15),
+          backgroundColor: iconColor.withValues(alpha: 0.15),
           child: Icon(icon, size: 20, color: iconColor),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -304,7 +304,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ? Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.15),
+                  color: Colors.amber.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(tag, style: const TextStyle(fontSize: 11, color: Colors.amber)),

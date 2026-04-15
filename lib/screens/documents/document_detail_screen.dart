@@ -179,9 +179,9 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
               margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.orange.withOpacity(0.1),
+                color: Colors.orange.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
               ),
               child: const Row(children: [
                 Icon(Icons.archive, color: Colors.orange, size: 16),
@@ -278,12 +278,12 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
           height: height,
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [color, color.withOpacity(0.7)],
+              colors: [color, color.withValues(alpha: 0.7)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: color.withOpacity(0.3), blurRadius: 12, offset: const Offset(0, 6))],
+            boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 6))],
           ),
           padding: EdgeInsets.all(isPassport ? 32 : 24),
           child: isPassport ? _buildPassportCover() : _buildStandardCard(maskedNumber),
@@ -315,7 +315,7 @@ class _DocumentDetailScreenState extends ConsumerState<DocumentDetailScreen> {
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text(_getDocumentTypeName(),
             style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-        Icon(Icons.badge, color: Colors.white.withOpacity(0.5), size: 28),
+        Icon(Icons.badge, color: Colors.white.withValues(alpha: 0.5), size: 28),
       ]),
       const Spacer(),
       Text(_card.fullName ?? '未填写姓名',

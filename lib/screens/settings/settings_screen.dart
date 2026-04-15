@@ -242,7 +242,7 @@ class SettingsScreen extends ConsumerWidget {
         );
         final filepath = await ref.read(backupServiceProvider).exportData(pwd);
         if (context.mounted) Navigator.pop(context); // 移除loading
-        final result = await Share.shareXFiles([XFile(filepath)], text: '卡片包备份文件');
+        await Share.shareXFiles([XFile(filepath)], text: '卡片包备份文件');
       } catch (e) {
         if (context.mounted) {
           Navigator.pop(context); // 移除loading

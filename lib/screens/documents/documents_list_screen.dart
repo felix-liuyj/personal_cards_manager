@@ -200,7 +200,7 @@ class _DocumentsListScreenState extends ConsumerState<DocumentsListScreen> {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             gradient: LinearGradient(
-              colors: [cardColor.withOpacity(0.8), cardColor],
+              colors: [cardColor.withValues(alpha: 0.8), cardColor],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),

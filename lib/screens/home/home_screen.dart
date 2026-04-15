@@ -303,7 +303,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     return Card(
       elevation: 0,
-      color: color.withOpacity(0.08),
+      color: color.withValues(alpha: 0.08),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         onTap: onTap,
@@ -318,7 +318,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 children: [
                   Icon(icon, color: color, size: 24),
                   if (onTap != null)
-                    Icon(Icons.arrow_forward_ios, size: 12, color: color.withOpacity(0.6)),
+                    Icon(Icons.arrow_forward_ios, size: 12, color: color.withValues(alpha: 0.6)),
                 ],
               ),
               const SizedBox(height: 12),
@@ -328,7 +328,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   width: 24,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 ),
-                error: (_, __) => const Text('-'),
+                error: (_, _) => const Text('-'),
                 data: (v) => Text(
                   '$v',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -341,7 +341,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Text(
                 title,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: color.withOpacity(0.8),
+                  color: color.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -381,7 +381,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   ) {
     return recentViewed.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
         return Column(
@@ -424,9 +424,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         width: 76,
                         padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.08),
+                          color: color.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: color.withOpacity(0.2)),
+                          border: Border.all(color: color.withValues(alpha: 0.2)),
                         ),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -467,7 +467,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: item.color.withOpacity(0.1),
+                  color: item.color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(item.icon, color: item.color, size: 26),
@@ -488,7 +488,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   Widget _buildExpiringSection(BuildContext context, WidgetRef ref, AsyncValue<List<dynamic>> expiringCards) {
     return expiringCards.when(
       loading: () => const SizedBox.shrink(),
-      error: (_, __) => const SizedBox.shrink(),
+      error: (_, _) => const SizedBox.shrink(),
       data: (items) {
         if (items.isEmpty) return const SizedBox.shrink();
 
@@ -559,17 +559,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       margin: const EdgeInsets.only(bottom: 8),
       elevation: 0,
       color: isExpired
-          ? Colors.red.withOpacity(0.06)
-          : Colors.orange.withOpacity(0.06),
+          ? Colors.red.withValues(alpha: 0.06)
+          : Colors.orange.withValues(alpha: 0.06),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isExpired ? Colors.red.withOpacity(0.2) : Colors.orange.withOpacity(0.2),
+          color: isExpired ? Colors.red.withValues(alpha: 0.2) : Colors.orange.withValues(alpha: 0.2),
         ),
       ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: color.withOpacity(0.12),
+          backgroundColor: color.withValues(alpha: 0.12),
           child: Icon(icon, color: color, size: 20),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
@@ -680,19 +680,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
     if (entry.type == 'bank') {
       final card = await isar.bankCards.get(entry.id);
-      if (card != null && mounted) {
+      if (card != null && context.mounted) {
         shouldRefresh = await Navigator.push(context, 
           MaterialPageRoute(builder: (_) => BankCardDetailScreen(card: card))) == true;
       }
     } else if (entry.type == 'member') {
       final card = await isar.memberCards.get(entry.id);
-      if (card != null && mounted) {
+      if (card != null && context.mounted) {
         shouldRefresh = await Navigator.push(context, 
           MaterialPageRoute(builder: (_) => MemberCardDetailScreen(card: card))) == true;
       }
     } else if (entry.type == 'id') {
       final card = await isar.iDCards.get(entry.id);
-      if (card != null && mounted) {
+      if (card != null && context.mounted) {
         shouldRefresh = await Navigator.push(context, 
           MaterialPageRoute(builder: (_) => DocumentDetailScreen(card: card))) == true;
       }

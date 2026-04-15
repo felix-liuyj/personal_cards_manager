@@ -17,7 +17,7 @@ class BackupService {
   BackupService(this._isarFuture);
 
   encrypt.Key _deriveKey(String password) {
-    final padded = (password + "pcm_backup_salt_key_84vN2xQpL9A!").substring(0, 32);
+    final padded = '${password}pcm_backup_salt_key_84vN2xQpL9A!'.substring(0, 32);
     return encrypt.Key.fromUtf8(padded);
   }
 

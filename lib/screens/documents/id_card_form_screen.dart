@@ -259,7 +259,7 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
             const SizedBox(height: 16),
             _buildSectionTitle('证件类型'),
             DropdownButtonFormField<String>(
-              value: _selectedCountry,
+              initialValue: _selectedCountry,
               decoration: const InputDecoration(labelText: '国家/地区'),
               items: _countries
                   .map(
@@ -278,7 +278,8 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedDocType,
+              key: ValueKey('doctype_$_selectedCountry'),
+              initialValue: _selectedDocType,
               decoration: const InputDecoration(labelText: '证件类型'),
               items: _currentDocTypes
                   .map(
@@ -331,7 +332,7 @@ class _IDCardFormScreenState extends ConsumerState<IDCardFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedGender,
+              initialValue: _selectedGender,
               decoration: const InputDecoration(labelText: '性别'),
               items: const [
                 DropdownMenuItem(value: 'M', child: Text('男')),

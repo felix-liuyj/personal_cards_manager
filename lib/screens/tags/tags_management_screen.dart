@@ -91,7 +91,7 @@ class _TagsManagementScreenState extends ConsumerState<TagsManagementScreen> wit
                       
                       final tag = existing ?? CustomTag();
                       tag.name = nameCtrl.text.trim();
-                      tag.colorHex = '#${selectedColor.value.toRadixString(16).padLeft(8, '0').substring(2)}'; // rrggbb
+                      tag.colorHex = '#${selectedColor.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}'; // rrggbb
                       
                       await isar.writeTxn(() async {
                         await isar.customTags.put(tag);
@@ -226,7 +226,7 @@ class _TagsManagementScreenState extends ConsumerState<TagsManagementScreen> wit
 
             return Card(
               elevation: 0,
-              color: c.withOpacity(0.1),
+              color: c.withValues(alpha: 0.1),
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
                 leading: CircleAvatar(backgroundColor: c, radius: 12),
@@ -275,7 +275,7 @@ class _TagsManagementScreenState extends ConsumerState<TagsManagementScreen> wit
             return Card(
               key: ValueKey(g.id),
               elevation: 0,
-              color: Colors.grey.withOpacity(0.1),
+              color: Colors.grey.withValues(alpha: 0.1),
               margin: const EdgeInsets.only(bottom: 8),
               child: ListTile(
                 leading: const Icon(Icons.folder_outlined),

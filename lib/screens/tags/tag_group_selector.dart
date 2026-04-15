@@ -52,8 +52,11 @@ class TagGroupSelector extends StatelessWidget {
                   value: isSelected,
                   onChanged: (val) {
                     setState(() {
-                      if (val == true) currentSelections.add(tag);
-                      else currentSelections.removeWhere((t) => t.id == tag.id);
+                      if (val == true) {
+                        currentSelections.add(tag);
+                      } else {
+                        currentSelections.removeWhere((t) => t.id == tag.id);
+                      }
                     });
                   },
                 );
@@ -87,21 +90,26 @@ class TagGroupSelector extends StatelessWidget {
           width: double.maxFinite,
           child: allGroups.isEmpty 
             ? const Text('暂无分组，请在设置中添加')
-            : ListView.builder(
-            shrinkWrap: true,
-            itemCount: allGroups.length,
-            itemBuilder: (_, i) {
-              final group = allGroups[i];
-              return RadioListTile<int>(
-                title: Text(group.name ?? ''),
-                value: group.id,
-                groupValue: selectedGroup?.id,
-                onChanged: (val) {
-                  onGroupChanged(group);
-                  Navigator.pop(ctx);
-                },
-              );
+            : RadioGroup<int?>(
+            groupValue: selectedGroup?.id,
+            onChanged: (val) {
+              if (val != null) {
+                final group = allGroups.firstWhere((g) => g.id == val);
+                onGroupChanged(group);
+              }
+              Navigator.pop(ctx);
             },
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: allGroups.length,
+              itemBuilder: (_, i) {
+                final group = allGroups[i];
+                return RadioListTile<int?>(
+                  title: Text(group.name ?? ''),
+                  value: group.id,
+                );
+              },
+            ),
           ),
         ),
         actions: [
@@ -128,7 +136,7 @@ class TagGroupSelector extends StatelessWidget {
           child: Text('分类与标签', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold)),
         ),
         ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.grey.withOpacity(0.3))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3))),
           leading: const Icon(Icons.folder_outlined),
           title: Text(selectedGroup?.name ?? '未分组'),
           trailing: const Icon(Icons.chevron_right),
@@ -136,7 +144,7 @@ class TagGroupSelector extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         ListTile(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.grey.withOpacity(0.3))),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8), side: BorderSide(color: Colors.grey.withValues(alpha: 0.3))),
           leading: const Icon(Icons.label_outline),
           title: selectedTags.isEmpty 
             ? const Text('无标签', style: TextStyle(color: Colors.grey))
@@ -147,7 +155,7 @@ class TagGroupSelector extends StatelessWidget {
                   try { if (t.colorHex != null) c = Color(int.parse(t.colorHex!.replaceAll('#', '0xFF'))); } catch (_) {}
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(color: c.withOpacity(0.2), borderRadius: BorderRadius.circular(12)),
+                    decoration: BoxDecoration(color: c.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(12)),
                     child: Text(t.name ?? '', style: TextStyle(fontSize: 12, color: c)),
                   );
                 }).toList(),
